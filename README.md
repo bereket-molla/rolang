@@ -56,55 +56,16 @@ this builds three executables:
 
 # run simulation
 ./rolang_run examples/demo.rol
-
-# interactive mode (type values into stdin)
-./rolang_event examples/demo.rol
-
-# or pipe values
-echo -e "2.0\n0.3\n0.7" | ./rolang_event examples/demo.rol
 ```
-
-## the demo program
-
-```rolang
-(* robot controller that stops when too close to obstacles *)
-
-signal distance : float;
-
-let stop : bool = distance < 0.5;
-
-(* detect when we transition to stopped *)
-let was_stopped : bool = prev stop;
-let just_stopped : bool = stop and not was_stopped;
-
-(* count how many times we've stopped *)
-time CTRL = 20ms;
-
-let stop_count : signal int =
-  stream [
-    start count = 0,
-    count <- if just_stopped then count + 1 else count,
-    emit count
-  ] every CTRL;
-
-let target_speed : float =
-  if stop then 0.0 else 1.5;
-
-let status : string =
-  if stop then "STOPPED" else "MOVING";
-```
-
 ## how it works
 
 when you write `let stop = distance < 0.5`, the compiler:
-
 1. builds a dependency graph (stop depends on distance)
 2. figures out topological order
 3. when distance changes, computes forward cone (all nodes reachable from distance)
 4. evaluates only those nodes
 
 so if you have 100 expressions but only 10 depend on distance, only those 10 recompute when distance changes. everything else stays idle.
-
 the event-driven runtime uses Unix.select so it sleeps until input arrives - no busy waiting.
 
 ## language syntax
