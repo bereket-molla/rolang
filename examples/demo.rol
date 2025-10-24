@@ -1,42 +1,32 @@
-(* robot navigation with safety *)
-
-(* sensor inputs *)
 signal distance : float;
-signal battery : float;
 
-(* safety logic *)
-let obstacle_close : bool = distance < 0.5;
-let battery_low : bool = battery < 11.0;
-let emergency : bool = obstacle_close or battery_low;
+let too_close : bool = distance < 0.5;
 
-(* detect emergency start event *)
-let prev_emergency : bool = prev emergency;
-let emergency_started : bool = emergency and not prev_emergency;
+time HEARTBEAT = 100ms;
 
-(* target velocity based on distance *)
-let target_vel : float =
-  if emergency then 0.0
-  else if distance < 1.0 then 0.3
-  else if distance < 2.0 then 0.7
-  else 1.0;
+let system_check : signal int =
+  stream [
+    start count = 0,
+    count <- count + 1,
+    emit count
+  ] every HEARTBEAT;
 
-(* smooth velocity controller at 50Hz *)
+let sampled_distance : float = sample distance every HEARTBEAT;
+
 time CTRL = 20ms;
 
-let velocity : signal float =
+let motor_velocity : signal float =
   stream [
     start vel = 0.0,
-    vel <- if emergency then 0.0
-           else if vel < target_vel then vel +. 0.05
-           else if vel > target_vel then vel -. 0.05
+    vel <- if too_close then 0.0
+           else if vel < 1.0 then vel +. 0.05
            else vel,
     emit vel
   ] every CTRL;
 
-(* status based on current conditions *)
+let heartbeat_danger : bool = too_close and (system_check > 0);
+
 let status : string =
-  if battery_low then "low battery"
-  else if obstacle_close then "obstacle"
-  else if velocity > 0.8 then "fast"
-  else if velocity > 0.3 then "moving"
-  else "stopped";
+  if too_close then "danger"
+  else if motor_velocity > 0.5 then "moving"
+  else "slow";
