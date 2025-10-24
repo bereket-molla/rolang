@@ -1,53 +1,42 @@
-(* autonomous robot navigation system *)
+(* robot navigation with safety *)
 
-(* external sensor inputs *)
-signal distance : float;  (* ultrasonic sensor in meters *)
-signal battery : float;   (* battery voltage *)
+(* sensor inputs *)
+signal distance : float;
+signal battery : float;
 
-(* basic safety checks *)
+(* safety logic *)
 let obstacle_close : bool = distance < 0.5;
 let battery_low : bool = battery < 11.0;
 let emergency : bool = obstacle_close or battery_low;
 
-(* track previous states using prev operator *)
+(* detect emergency start event *)
 let prev_emergency : bool = prev emergency;
 let emergency_started : bool = emergency and not prev_emergency;
 
-(* motion control *)
-let can_move : bool = not emergency;
-
-let target_velocity : float =
+(* target velocity based on distance *)
+let target_vel : float =
   if emergency then 0.0
   else if distance < 1.0 then 0.3
   else if distance < 2.0 then 0.7
   else 1.0;
 
-(* periodic controller running at 50Hz *)
+(* smooth velocity controller at 50Hz *)
 time CTRL = 20ms;
 
-let velocity_control : signal float =
+let velocity : signal float =
   stream [
-    start current_vel = 0.0,
-    current_vel <- if can_move then
-                     if current_vel < target_velocity then current_vel +. 0.05
-                     else if current_vel > target_velocity then current_vel -. 0.05
-                     else current_vel
-                   else 0.0,
-    emit current_vel
+    start vel = 0.0,
+    vel <- if emergency then 0.0
+           else if vel < target_vel then vel +. 0.05
+           else if vel > target_vel then vel -. 0.05
+           else vel,
+    emit vel
   ] every CTRL;
 
-(* event counter *)
-let event_count : signal int =
-  stream [
-    start count = 0,
-    count <- if emergency_started then count + 1 else count,
-    emit count
-  ] every CTRL;
-
-(* status reporting *)
-let status_message : string =
+(* status based on current conditions *)
+let status : string =
   if battery_low then "low battery"
-  else if obstacle_close then "obstacle detected"
-  else if velocity_control > 0.8 then "moving fast"
-  else if velocity_control > 0.3 then "moving"
+  else if obstacle_close then "obstacle"
+  else if velocity > 0.8 then "fast"
+  else if velocity > 0.3 then "moving"
   else "stopped";
