@@ -1,0 +1,13 @@
+*.cmo
+*.cmi
+*.cmx
+*.o
+src/frontend/parser.ml
+src/frontend/parser.mli
+src/frontend/scanner.ml
+test_frontend
+rolang_run
+rolang_event
+*.dot
+*.png
+

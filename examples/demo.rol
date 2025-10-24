@@ -1,0 +1,23 @@
+(* simple robot controller *)
+
+signal distance : float;
+
+let stop : bool = distance < 0.5;
+let was_stopped : bool = prev stop;
+let just_stopped : bool = stop and not was_stopped;
+
+time CTRL = 20ms;
+
+let stop_count : signal int =
+  stream [
+    start count = 0,
+    count <- if just_stopped then count + 1 else count,
+    emit count
+  ] every CTRL;
+
+let target_speed : float =
+  if stop then 0.0 else 1.5;
+
+let status : string =
+  if stop then "STOPPED" else "MOVING";
+
