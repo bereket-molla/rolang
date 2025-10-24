@@ -87,7 +87,7 @@ let prev_value = prev sensor;
 let last_10 = window sensor 10;
 
 (* streams for periodic things *)
-let counter : signal int =
+let heartbeat : signal int =
   stream [
     start n = 0,
     n <- n + 1,
