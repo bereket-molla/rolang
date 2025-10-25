@@ -1,6 +1,6 @@
 # rolang
 
-a small Functional Reactive Programming language and friend (tya2104@columbia.edu) and I wrote for a programming languaged and translators class based on a paper about reactive programming. The main idea is you write relationships that should always be true, and the runtime keeps them true when inputs change --it reacts to change.
+a small Functional Reactive Programming language friend (tya2104@columbia.edu) and I wrote for a programming languaged and translators class based on a paper about reactive programming. The main idea is you write relationships that should always be true, and the runtime keeps them true when inputs change --it reacts to change.
 
 ## quick example
 
